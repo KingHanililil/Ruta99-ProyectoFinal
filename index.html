@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ruta 99 — Información & Catálogo</title>
+  <!-- LEAFLET (CSS + JS) → NECESARIO PARA MOSTRAR UN MAPA REAL -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    
+    :root{
+      --bg-dark:#0d1117;
+      --panel:#161b22;
+      --muted:#888;
+      --accent:#00d084;
+      --card:#1b222c;
+      --glass: rgba(255,255,255,0.03);
+      --radius:14px;
+      --text:#fff;
+      --ui-font: "Segoe UI", sans-serif;
+    }
+
+    *{box-sizing:border-box}
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      font-family: var(--ui-font);
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #2c2f33;
+      gap:1rem;
+    }
+
+    .brand {
+      display:flex;align-items:center;gap:1rem
+    }
+
+    .badge {
+      background: var(--accent);
+      color: #000;
+      font-weight: bold;
+      padding: 0.45rem 0.8rem;
+      border-radius: 10px;
+      margin-right: 0.6rem;
+    }
+
+    h1 {font-size:1.25rem;margin:0}
+    header p{margin:0;color:#b8c0c8;font-size:0.9rem}
+
+    .page{
+      padding:1.5rem;
+      display:grid;
+      grid-template-columns: 2fr 1fr;
+      gap:1.5rem;
+    }
+
+    /* Left column: map + autos */
+    .left-col{display:flex;flex-direction:column;gap:1.5rem}
+
+    .map-section {
+      background-color: var(--panel);
+      border-radius: var(--radius);
+      height: 400px;
+      background-image: url("https://play-lh.googleusercontent.com/CruXj5LD8-UQfaS23jfIt37DVpkR4J0QrC-FvyCSy8YErzd1bCfeouXChYLWngjfTkMw");
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 6px 24px #00000060;
+      padding: 1rem;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+  
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map-overlay{background:var(--glass);padding:0.7rem;border-radius:10px;width:min(320px,90%)}
+
+    .autos-panel{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px;padding:1rem;box-shadow:0 6px 20px #00000060;
+      max-height:360px;overflow:auto;
+    }
+
+    h2.section-title{color:#dfe6ea;margin:0 0 0.8rem 0;font-size:1.05rem}
+
+    /* Right column: info */
+    .info-section{
+      background-color: var(--panel);
+      padding:1.2rem;border-radius:var(--radius);box-shadow:0 6px 24px #00000060;
+      min-height:200px;display:flex;flex-direction:column;gap:1rem
+    }
+
+    .data-box{display:flex;justify-content:space-between;background-color:var(--card);padding:1rem;border-radius:10px}
+    .data-box div{flex:1;text-align:center}
+
+    button, .btn {
+      background: var(--accent);
+      border: none;color:#000;font-weight:700;padding:0.6rem 0.9rem;border-radius:10px;cursor:pointer;transition:all .2s
+    }
+    button:hover{transform:translateY(-2px)}
+
+    ul{padding-left:1rem}
+
+    /* Autos styles (adapted to dark) */
+    .auto-item{border-bottom:1px solid rgba(255,255,255,0.04);padding:8px 0}
+    .auto-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:8px;border-radius:8px;background:transparent}
+    .auto-header:hover{background:rgba(255,255,255,0.02)}
+    .auto-body{display:none;padding:8px}
+    .contact-form{margin-top:8px;background:rgba(255,255,255,0.02);padding:8px;border-radius:8px}
+    .contact-form input, .contact-form textarea{width:100%;margin:6px 0;padding:8px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text)}
+    .contact-form input::placeholder, .contact-form textarea::placeholder{color:#9aa3ad}
+    .contact-form button{background:#22c55e;color:#000}
+
+    footer{padding:1rem;text-align:center;color:var(--muted);font-size:0.9rem}
+
+    /* Responsive */
+    @media (max-width:900px){
+      .page{grid-template-columns:1fr;padding:1rem}
+      .map-section{height:260px}
+      .autos-panel{max-height:300px}
+    }
+
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="badge">R99</span>
+    <div>
+      <h1>Ruta 99 — Información & Catálogo</h1>
+      <p>Proyecto: paradas, mapa, horarios y catálogo de autos</p>
+    </div>
+  </div>
+  <div style="display:flex;gap:0.6rem;align-items:center">
+    <div style="text-align:right;color:#b8c0c8;font-size:0.95rem">
+      <div id="time">Cargando hora...</div>
+      <div id="city" style="font-size:0.85rem;margin-top:2px">Cargando ciudad...</div>
+    </div>
+    <button id="btnPDF">Descargar PDF</button>
+  </div>
+</header>
+
+<main class="page">
+  <div class="left-col">
+
+<section class="map-section">
+  <div class="map-overlay">
+    <strong>Mapa — Ruta 99</strong>
+    <div style="font-size:0.85rem;color:#b6bec6">Paradas principales y seguimiento en tiempo real</div>
+  </div>
+
+  <!-- CONTENEDOR REAL DEL MAPA -->
+  <div id="map" style="width:100%; height:100%; border-radius:10px;"></div>
+
+  <div style="display:flex;gap:10px;align-items:center; margin-top:10px;">
+    <div class="map-overlay" style="width:auto">
+      <div style="font-size:0.85rem">Temperatura:</div>
+      <div id="temp">Cargando...</div>
+    </div>
+    <div class="map-overlay" style="width:auto">
+      <div style="font-size:0.85rem">Código:</div>
+      <div>R99</div>
+    </div>
+  </div>
+</section>
+
+    <section class="autos-panel">
+      <h2 class="section-title">Catálogo de Autos Disponibles</h2>
+      <div id="autosContainer">
+        <p style="color:#9aa3ad">Cargando autos disponibles...</p>
+      </div>
+    </section>
+
+  </div>
+
+  <aside class="info-section">
+    <div>
+      <h3 style="margin:0">Horario oficial</h3>
+      <p style="margin:6px 0 0 0;color:#98a4ad">Días hábiles — Contacto: 55-1234-5678</p>
+      <div style="margin-top:10px">
+        <button onclick="alert('Función de PDF desactivada en esta demo. Puedes implementarla con jsPDF o Print.js')">Imprimir / PDF</button>
+      </div>
+    </div>
+
+    <hr style="margin:0;border:0.5px solid #2c2f33;">
+
+    <div>
+      <h4 style="margin:0 0 6px 0">Datos en tiempo real</h4>
+      <ul style="margin:0">
+        <li><strong>Temperatura actual:</strong> <span id="tempList">Cargando...</span></li>
+        <li><strong>Ciudad:</strong> <span id="cityList">Cargando...</span></li>
+        <li><strong>Hora local:</strong> <span id="timeList">Cargando...</span></li>
+      </ul>
+    </div>
+
+    <div style="margin-top:auto">
+      <div class="data-box">
+        <div>
+          <p style="margin:0;font-weight:700">Kilometraje</p>
+          <p style="margin:0">18.4 km</p>
+        </div>
+        <div>
+          <p style="margin:0;font-weight:700">Tarifa</p>
+          <p style="margin:0">$10 MXN</p>
+        </div>
+        <div>
+          <p style="margin:0;font-weight:700">Estado</p>
+          <p style="margin:0">Con servicios</p>
+        </div>
+      </div>
+
+      <h4 style="margin:12px 0 6px 0">Paradas principales</h4>
+      <ul style="margin:0">
+        <li>Central de autobuses</li>
+        <li>Avenida Reforma</li>
+        <li>Centro Histórico</li>
+        <li>Colonia del Valle</li>
+        <li>Terminal Sur</li>
+      </ul>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  Proyecto de ejemplo — “Ruta 99” · Actualizado automáticamente con APIs públicas gratuitas.
+</footer>
+<script>
+  // ---------------- APIs públicas: clima, ciudad y hora -----------------
+  async function loadWeather() {
+    try {
+      const res = await fetch(
+        'https://api.open-meteo.com/v1/forecast?latitude=19.43&longitude=-99.13&current_weather=true'
+      );
+      const data = await res.json();
+      const t = data.current_weather.temperature + '°C';
+      temp.textContent = t;
+      tempList.textContent = t;
+    } catch {
+      temp.textContent = 'No disponible';
+      tempList.textContent = 'No disponible';
+    }
+  }
+
+  async function loadCity() {
+    try {
+      // API original (a veces falla en Vite)
+      const res = await fetch('https://ipapi.co/json/');
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const cityStr = data.city + ', ' + data.country_name;
+      city.textContent = cityStr;
+      cityList.textContent = cityStr;
+    } catch {
+      // Fallback silencioso SOLO si falla
+      try {
+        const res2 = await fetch('http://ip-api.com/json/');
+        const data2 = await res2.json();
+        const cityStr = data2.city + ', ' + data2.country;
+        city.textContent = cityStr;
+        cityList.textContent = cityStr;
+      } catch {
+        city.textContent = 'Desconocida';
+        cityList.textContent = 'Desconocida';
+      }
+    }
+  }
+
+  async function loadTime() {
+    try {
+      const res = await fetch(
+        'https://worldtimeapi.org/api/timezone/America/Mexico_City'
+      );
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const date = new Date(data.datetime);
+      const timeStr = date.toLocaleTimeString();
+      time.textContent = timeStr;
+      timeList.textContent = timeStr;
+    } catch {
+      // Fallback: hora local del navegador
+      const local = new Date().toLocaleTimeString();
+      time.textContent = local;
+      timeList.textContent = local;
+    }
+  }
+
+  // ---------------- Fallback de imagen del mapa SI falla ----------------
+  document.getElementById('map').addEventListener('error', () => {
+    document.getElementById('map').style.backgroundImage =
+      'url("https://upload.wikimedia.org/wikipedia/commons/6/6c/Mapa_CD_MX.png")';
+  });
+
+  loadWeather();
+  loadCity();
+  loadTime();
+
+  // ---------------- Catálogo de autos (del segundo archivo) -------------
+  function obtenerAutos() {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          { marca: "Toyota Supra", año: 2021, precio: "$45,000 USD", color: "Rojo", tipo: "Deportivo", estado: "Nuevo" },
+          { marca: "Ford Mustang GT", año: 2020, precio: "$52,000 USD", color: "Azul", tipo: "Deportivo", estado: "Nuevo" },
+          { marca: "Honda Civic", año: 2019, precio: "$24,000 USD", color: "Blanco", tipo: "Sedán", estado: "Usado" },
+          { marca: "Nissan GT-R", año: 2022, precio: "$98,000 USD", color: "Gris", tipo: "Superdeportivo", estado: "Nuevo" },
+          { marca: "Chevrolet Camaro", año: 2021, precio: "$47,000 USD", color: "Negro", tipo: "Deportivo", estado: "Nuevo" },
+          { marca: "Mazda MX-5", año: 2020, precio: "$32,000 USD", color: "Rojo", tipo: "Convertible", estado: "Nuevo" },
+          { marca: "BMW M3", año: 2021, precio: "$68,000 USD", color: "Blanco", tipo: "Deportivo", estado: "Nuevo" },
+          { marca: "Audi A4", año: 2022, precio: "$43,000 USD", color: "Negro", tipo: "Sedán", estado: "Nuevo" },
+          { marca: "Tesla Model 3", año: 2023, precio: "$56,000 USD", color: "Gris", tipo: "Eléctrico", estado: "Nuevo" },
+          { marca: "Jeep Wrangler", año: 2018, precio: "$35,000 USD", color: "Verde", tipo: "Todo Terreno", estado: "Usado" }
+        ]);
+      }, 800);
+    });
+  }
+
+  async function mostrarAutos() {
+    autosContainer.innerHTML = "<p style='color:#9aa3ad'>Cargando datos...</p>";
+
+    try {
+      const autos = await obtenerAutos();
+      autosContainer.innerHTML = "";
+
+      autos.forEach((auto, index) => {
+        const div = document.createElement("div");
+        div.className = "auto-item";
+
+        div.innerHTML = `
+          <div class="auto-header" onclick="toggleAuto(${index})">
+            <strong>${auto.marca}</strong>
+            <span style="color:#9aa3ad">${auto.precio}</span>
+          </div>
+          <div class="auto-body" id="auto-body-${index}">
+            <p><strong>Año:</strong> ${auto.año}</p>
+            <p><strong>Color:</strong> ${auto.color}</p>
+            <p><strong>Tipo:</strong> ${auto.tipo}</p>
+            <p><strong>Estado:</strong> ${auto.estado}</p>
+            <div class="contact-form">
+              <h4 style="margin:0 0 8px 0">Contactar Vendedor</h4>
+              <input type="text" id="nombre-${index}" placeholder="Tu nombre" required>
+              <input type="email" id="correo-${index}" placeholder="Tu correo" required>
+              <textarea id="mensaje-${index}" rows="3" placeholder="Mensaje..."></textarea>
+              <button onclick="enviarFormulario(${index}, '${auto.marca.replace(/'/g,"\\'")}')">Enviar Solicitud</button>
+            </div>
+          </div>
+        `;
+
+        autosContainer.appendChild(div);
+      });
+    } catch {
+      autosContainer.innerHTML =
+        "<p style='color:#ff8b8b'>Error al cargar los autos. Intenta más tarde.</p>";
+    }
+  }
+
+  function toggleAuto(index) {
+    const cuerpo = document.getElementById(`auto-body-${index}`);
+    cuerpo.style.display = cuerpo.style.display === "block" ? "none" : "block";
+  }
+
+  function enviarFormulario(index, marca) {
+    const nombre = document.getElementById(`nombre-${index}`).value.trim();
+    const correo = document.getElementById(`correo-${index}`).value.trim();
+    const mensaje = document.getElementById(`mensaje-${index}`).value.trim();
+
+    if (!nombre || !correo) {
+      alert("Por favor completa todos los campos obligatorios.");
+      return;
+    }
+
+    setTimeout(() => {
+      alert(`✅ Solicitud enviada al vendedor del ${marca}.\nGracias ${nombre}, te responderán a ${correo}.`);
+      document.getElementById(`nombre-${index}`).value = "";
+      document.getElementById(`correo-${index}`).value = "";
+      document.getElementById(`mensaje-${index}`).value = "";
+    }, 800);
+  }
+
+  mostrarAutos();
+</script>
+<script>
+  const map = L.map('map').setView([19.43, -99.13], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  L.marker([19.43, -99.13]).addTo(map).bindPopup("Parada principal — Ruta 99");
+
++  // si Leaflet no ocupa todo el contenedor al inicio, forzamos recalculo
++  setTimeout(()=>{ map.invalidateSize(); }, 200);
+</script>
+</body>
+</html>
